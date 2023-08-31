@@ -19,12 +19,15 @@ app.get('/', (req, res) => {
 
 const backendPlayers = {}//an object containing the active backendPlayers. Is an object for faster performance.
 
+const SPEED =10
+
 io.on('connection', (socket) => {
   console.log('a user connected')
   backendPlayers[socket.id] = {
     x: 500 * Math.random(),
     y: 500 * Math.random(),
-    color: `hsl(${360*Math.random()}, 100%, 50%)`
+    color: `hsl(${360*Math.random()}, 100%, 50%)`,
+    sequenceNumber: 0
   }//when a player joins this generates an id and sets a starting x and y
 
   io.emit('updatePlayers',  backendPlayers)//sends backendPlayers object to front end
@@ -35,19 +38,20 @@ io.on('connection', (socket) => {
     io.emit('updatePlayers')
   })//if a player disconnects from the game it will remove the player from the backendPlayers object
 
-  socket.on('keydown', (keycode) => {
+  socket.on('keydown', ({keycode, sequenceNumber}) => {
+    backendPlayers[socket.id].sequenceNumber = sequenceNumber
     switch(keycode) {
       case 'KeyW' :
-        backendPlayers[socket.id].y -= 5
+        backendPlayers[socket.id].y -= SPEED
         break
       case 'KeyA' :
-        backendPlayers[socket.id].x -= 5
+        backendPlayers[socket.id].x -= SPEED
         break
       case 'KeyS' :
-        backendPlayers[socket.id].y += 5
+        backendPlayers[socket.id].y += SPEED
         break
       case 'KeyD' :
-        backendPlayers[socket.id].x += 5
+        backendPlayers[socket.id].x += SPEED
         break
     }
   })

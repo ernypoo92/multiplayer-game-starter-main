@@ -30,8 +30,25 @@ socket.on('updatePlayers', (backendPlayers) => {
     }
     //if they exist in the list then we will update their position
     else{
-      frontendPlayers[id].x = backendPlayer.x
-      frontendPlayers[id].y = backendPlayer.y
+      // front end server reconsiliation for local player. Hendles if not all local players requests are handeled by the server in the timeInterval
+      if (id === socket.id) {
+        frontendPlayers[id].x = backendPlayer.x
+        frontendPlayers[id].y = backendPlayer.y
+        const lastBackendInputIndex = playerInputs.findIndex(input => {
+          return backendPlayer.sequenceNumber === input.sequenceNumber
+        })
+        if(lastBackendInputIndex > -1){
+          playerInputs.splice(0, lastBackendInputIndex + 1)
+        
+          playerInputs.forEach(input => {
+            frontendPlayers[id].x += dx
+            frontendPlayers[id].y += dy
+          })
+        }
+      }else{// for all of the non-local players movement
+        frontendPlayers[id].x = backendPlayer.x
+        frontendPlayers[id].y = backendPlayer.y
+      }
     }
 
   }
@@ -73,22 +90,33 @@ const keys = {
     pressed: false
   }
 }
+const SPEED = 10
+const playerInputs = []
+let sequenceNumber = 0
 setInterval(() => {
   if (keys.w.pressed){
-    frontendPlayers[socket.id].y -= 5
-    socket.emit('keydown', 'KeyW')
+    sequenceNumber++
+    playerInputs.push({sequenceNumber, dx: 0, dy: -SPEED})
+    frontendPlayers[socket.id].y -= SPEED
+    socket.emit('keydown', {keycode: 'KeyW', sequenceNumber})
   }
   if (keys.a.pressed){
-    frontendPlayers[socket.id].x -= 5
-    socket.emit('keydown', 'KeyA')
+    sequenceNumber++
+    playerInputs.push({sequenceNumber, dx: -SPEED, dy: 0})
+    frontendPlayers[socket.id].x -= SPEED
+    socket.emit('keydown', {keycode: 'KeyA', sequenceNumber})
   }
   if (keys.s.pressed){
-    frontendPlayers[socket.id].y += 5
-    socket.emit('keydown', 'KeyS')
+    sequenceNumber++
+    playerInputs.push({sequenceNumber, dx: 0, dy: SPEED})
+    frontendPlayers[socket.id].y += SPEED
+    socket.emit('keydown', {keycode: 'KeyS', sequenceNumber})
   }
   if (keys.d.pressed){
-    frontendPlayers[socket.id].x += 5
-    socket.emit('keydown', 'KeyD')
+    sequenceNumber++
+    playerInputs.push({sequenceNumber, dx: SPEED, dy: 0})
+    frontendPlayers[socket.id].x += SPEED
+    socket.emit('keydown', {keycode: 'KeyD', sequenceNumber})
   }
 }, 15)
 
