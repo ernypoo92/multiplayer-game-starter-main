@@ -35,8 +35,29 @@ io.on('connection', (socket) => {
     io.emit('updatePlayers')
   })//if a player disconnects from the game it will remove the player from the backendPlayers object
 
+  socket.on('keydown', (keycode) => {
+    switch(keycode) {
+      case 'KeyW' :
+        backendPlayers[socket.id].y -= 5
+        break
+      case 'KeyA' :
+        backendPlayers[socket.id].x -= 5
+        break
+      case 'KeyS' :
+        backendPlayers[socket.id].y += 5
+        break
+      case 'KeyD' :
+        backendPlayers[socket.id].x += 5
+        break
+    }
+  })
+
   console.log(backendPlayers)
 })
+
+setInterval(() => {
+  io.emit('updatePlayers', backendPlayers)
+}, 15)
 
 server.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
