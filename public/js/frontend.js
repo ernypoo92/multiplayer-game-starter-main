@@ -16,6 +16,25 @@ const y = canvas.height / 2
 //const player = new Player(x, y, 10, 'white')
 //Where object of players is stored from the backend
 const frontendPlayers = {}
+const frontendProjectiles = {}
+
+socket.on('updateProjectiles', (backendProjectiles) => {
+  for (const id in backendProjectiles){
+    const backendProjectile = backendProjectiles [id]
+
+    if (!frontendProjectiles[id]) {
+      frontendProjectiles[id] = new Projectile({
+            x:backendProjectile.x, 
+            y:backendProjectile.y, 
+            radius: 5, 
+            color: frontendPlayers[backendProjectile.playerId]?.color, 
+            velocity: backendProjectile.velocity})
+    }else{
+      frontendProjectiles[id].x += backendProjectiles[id].velocity.x
+      frontendProjectiles[id].y += backendProjectiles[id].velocity.y
+    }
+  }
+})
 //takes backend player object fand adds to the front end
 socket.on('updatePlayers', (backendPlayers) => {
   for(const id in backendPlayers) {
@@ -41,13 +60,20 @@ socket.on('updatePlayers', (backendPlayers) => {
           playerInputs.splice(0, lastBackendInputIndex + 1)
         
           playerInputs.forEach(input => {
-            frontendPlayers[id].x += dx
-            frontendPlayers[id].y += dy
+            frontendPlayers[id].x += input.dx
+            frontendPlayers[id].y += input.dy
           })
         }
       }else{// for all of the non-local players movement
-        frontendPlayers[id].x = backendPlayer.x
-        frontendPlayers[id].y = backendPlayer.y
+        // frontendPlayers[id].x = backendPlayer.x
+        // frontendPlayers[id].y = backendPlayer.y
+        //uses gsap to animateplayer movement if lag occurs(called Player Interpolation)
+        gsap.to(frontendPlayers[id], {
+          x: backendPlayer.x,
+          y: backendPlayer.y,
+          duration: 0.015,
+          ease: 'linear'
+        })
       }
     }
 
@@ -71,7 +97,10 @@ function animate() {
     frontendPlayer.draw()
   }
 
-  
+  for(const id in frontendProjectiles) {
+    const frontendProjectile = frontendProjectiles[id]
+    frontendProjectile.draw()
+  }
 }
 
 animate()
